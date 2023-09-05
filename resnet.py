@@ -164,13 +164,15 @@ def inferenceStep():
                "resnet110-1d1ed7c2.th", "resnet1202-f3b1deed.th"]
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    batch_size = 4
+    batch_size = 128
+
     trainingdata = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
             transforms.ToTensor(),
             normalize,
         ]))
+
     trainingLoader = tud.DataLoader(trainingdata, batch_size=batch_size, shuffle=True, num_workers=2)
 
     testData = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transforms.Compose([
@@ -179,6 +181,7 @@ def inferenceStep():
         ]))
     testLoader = tud.DataLoader(testData, batch_size=batch_size, shuffle=False, num_workers=2)
 
+    # result classes from the  CIFAR10 data set
     classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
