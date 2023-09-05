@@ -201,7 +201,7 @@ def inferenceStep():
             images = images.cuda()
             labels = labels.cuda()
             outputs = model(images)
-            predictions = torch.max(outputs.data, 1)
+            _, predictions = torch.max(outputs.data, 1)
             count += labels.size(0)
             true_positive += (predictions == labels).double().sum().item()
         train_accuracy = 100 * true_positive / count
