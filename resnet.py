@@ -27,14 +27,21 @@ Reference:
 If you use this implementation in you work, please don't forget to mention the
 author, Yerlan Idelbayev.
 '''
+import os
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-
+import torchvision.datasets
+import torchvision.transforms as transforms
+import torch.utils.data as tud
+from tqdm import tqdm
 from torch.autograd import Variable
 
+
 __all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202']
+
 
 def _weights_init(m):
     classname = m.__class__.__name__
@@ -149,6 +156,68 @@ def test(net):
         total_params += np.prod(x.data.numpy().shape)
     print("Total number of params", total_params)
     print("Total layers", len(list(filter(lambda p: p.requires_grad and len(p.data.size())>1, net.parameters()))))
+
+def inferenceStep():
+
+    weights = ["resnet20-12fca82f.th", "resnet32-d509ac18.th", "resnet44-014dd654.th", "resnet56-4bfd9763.th",
+               "resnet110-1d1ed7c2.th", "resnet1202-f3b1deed.th"]
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    batch_size = 4
+    trainingdata = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32, 4),
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    trainingLoader = tud.DataLoader(trainingdata, batch_size=batch_size, shuffle=True, num_workers=2)
+
+    testData = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ]))
+    testLoader = tud.DataLoader(testData, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    classes = ('plane', 'car', 'bird', 'cat',
+           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+    # load weights
+    pretrained_models_folder = "pretrained_models"
+
+    for index, weight in enumerate(weights):
+        model = globals()[__all__[index]]()
+        midway_model = torch.load(os.path.join(pretrained_models_folder, weight))
+
+        model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
+        model.load_state_dict(midway_model['state_dict'])
+        model = model.to("cuda")
+
+        model.eval()
+        count = 0
+        true_positive = 0
+
+        for images, labels in tqdm(trainingLoader):
+            images = images.cuda()
+            labels = labels.cuda()
+            outputs = model(images)
+            predictions = torch.max(outputs.data, 1)
+            count += labels.size(0)
+            true_positive += (predictions == labels).double().sum().item()
+        train_accuracy = 100 * true_positive / count
+        print('Train Accuracy: {:.2f} %'.format(train_accuracy))
+
+        # test error
+        correct = 0
+        total = 0
+        for images, labels in tqdm(testLoader):
+            images = images.cuda()
+            labels = labels.cuda()
+            outputs = model(images)
+            predictions = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predictions == labels).double().sum().item()
+        test_accuracy = 100 * correct / total
+        print('Test Accuracy: {:.2f} %'.format(test_accuracy))
 
 
 if __name__ == "__main__":
