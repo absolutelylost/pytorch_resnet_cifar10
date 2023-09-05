@@ -157,6 +157,7 @@ def test(net):
     print("Total number of params", total_params)
     print("Total layers", len(list(filter(lambda p: p.requires_grad and len(p.data.size())>1, net.parameters()))))
 
+
 def inferenceStep():
 
     weights = ["resnet20-12fca82f.th", "resnet32-d509ac18.th", "resnet44-014dd654.th", "resnet56-4bfd9763.th",
@@ -226,3 +227,4 @@ if __name__ == "__main__":
             print(net_name)
             test(globals()[net_name]())
             print()
+    inferenceStep()
