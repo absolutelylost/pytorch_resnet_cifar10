@@ -186,7 +186,7 @@ def inferenceStep():
     pretrained_models_folder = "pretrained_models"
 
     for index, weight in enumerate(weights):
-        model = globals()[__all__[index]]()
+        model = globals()[__all__[(index+1)]]()
         midway_model = torch.load(os.path.join(pretrained_models_folder, weight))
 
         model = torch.nn.DataParallel(model, device_ids=range(torch.cuda.device_count()))
