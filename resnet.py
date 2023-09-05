@@ -173,13 +173,13 @@ def inferenceStep():
             normalize,
         ]))
 
-    trainingLoader = tud.DataLoader(trainingdata, batch_size=batch_size, shuffle=True, num_workers=2)
+    trainingDataLoader = tud.DataLoader(trainingdata, batch_size=batch_size, shuffle=True, num_workers=2)
 
     testData = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transforms.Compose([
             transforms.ToTensor(),
             normalize,
         ]))
-    testLoader = tud.DataLoader(testData, batch_size=batch_size, shuffle=False, num_workers=2)
+    testDataLoader = tud.DataLoader(testData, batch_size=batch_size, shuffle=False, num_workers=2)
 
     # result classes from the  CIFAR10 data set
     classes = ('plane', 'car', 'bird', 'cat',
@@ -200,7 +200,7 @@ def inferenceStep():
         count = 0
         true_positive = 0
 
-        for images, labels in tqdm(trainingLoader):
+        for images, labels in tqdm(trainingDataLoader):
             images = images.cuda()
             labels = labels.cuda()
             outputs = model(images)
@@ -213,7 +213,7 @@ def inferenceStep():
         # test error
         correct = 0
         total = 0
-        for images, labels in tqdm(testLoader):
+        for images, labels in tqdm(testDataLoader):
             images = images.cuda()
             labels = labels.cuda()
             outputs = model(images)
